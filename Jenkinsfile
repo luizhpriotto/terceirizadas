@@ -82,7 +82,7 @@ pipeline {
               docker.withRegistry( 'https://registry.sme.prefeitura.sp.gov.br', registryCredential ) {
               dockerImage1.push(imagetag)
               }
-              sh "docker rmi $(docker images --format '{{.Repository}}:{{.Tag}}' | grep $imagename1)"
+              sh "docker rmi \$(docker images --format '{{.Repository}}:{{.Tag}}' | grep $imagename1)"
             }
           }
         }
