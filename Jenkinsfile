@@ -1,9 +1,8 @@
 pipeline {
     environment {
       branchname =  env.BRANCH_NAME.toLowerCase()
-      registryCredential = 'regsme'
       kubeconfig = getKubeconf(env.branchname)
-      imagetag = getTag(env.branchname)
+      registryCredential = 'regsme'
     }
   
     agent {
@@ -77,11 +76,11 @@ pipeline {
           steps {
             script {
               imagename1 = "registry.sme.prefeitura.sp.gov.br/${env.branchname}/sme-sigpae-api"
-              dockerImage1 = docker.build imagename1
+              dockerImage1 = docker.build(imagename1, "-f Dockerfile .")
               docker.withRegistry( 'https://registry.sme.prefeitura.sp.gov.br', registryCredential ) {
-              dockerImage1.push(imagetag)
+              dockerImage1.push()
               }
-              sh "docker rmi \$(docker images --format '{{.Repository}}:{{.Tag}}' | grep $imagename1)"
+              sh "docker rmi $imagename1"
             }
           }
         }
@@ -145,20 +144,6 @@ def sendTelegram(message) {
                 validResponseCodes: '200')
         return response
     }
-}
-def getTag(branchName) {
-    if("main".equals(branchName)) {
-        return "latest";
-    } else if ("master".equals(branchName)) {
-        return "latest";
-    } else if ("homolog".equals(branchName)) {
-        return "homolog";
-    } else if ("release".equals(branchName)) {
-        return "homolog";
-    } else if ("development".equals(branchName)) {
-        return "dev";
-    }
-    else{ return "" }
 }
 def getKubeconf(branchName) {
     if("main".equals(branchName)) {
