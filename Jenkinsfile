@@ -67,8 +67,7 @@ pipeline {
               withSonarQubeEnv('sonarqube-local'){
                 sh 'echo "[ INFO ] Iniciando analise Sonar..." && sonar-scanner \
                 -Dsonar.projectKey=SME-Terceirizadas \
-                -Dsonar.sources=. \
-                -Dsonar.host.url=http://sonar.sme.prefeitura.sp.gov.br'
+                -Dsonar.sources=.'
             }
           }
         }
