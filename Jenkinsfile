@@ -1,9 +1,8 @@
 pipeline {
     environment {
       branchname =  env.BRANCH_NAME.toLowerCase()
-      registryCredential = 'regsme'
       kubeconfig = getKubeconf(env.branchname)
-      imagetag = getTag(env.branchname)
+      registryCredential = 'regsme'
     }
   
     agent {
@@ -46,7 +45,7 @@ pipeline {
         }
         
         stage('Testes') {
-          when { branch 'homolog' }
+          when { branch 'testado' }
           steps {
              sh 'pip install --user pipenv'
              sh 'pipenv install --dev'
@@ -67,31 +66,30 @@ pipeline {
               withSonarQubeEnv('sonarqube-local'){
                 sh 'echo "[ INFO ] Iniciando analise Sonar..." && sonar-scanner \
                 -Dsonar.projectKey=SME-Terceirizadas \
-                -Dsonar.sources=. \
-                -Dsonar.host.url=http://sonar.sme.prefeitura.sp.gov.br'
+                -Dsonar.sources=.'
             }
           }
         }
 
         stage('Build') {
-          when { anyOf { branch 'master'; branch 'main'; branch "story/*"; branch 'development'; branch 'release';  } } 
+          when { anyOf { branch 'master'; branch 'main'; branch "story/*"; branch 'development'; branch 'release'; branch 'homolog';  } } 
           steps {
             script {
               imagename1 = "registry.sme.prefeitura.sp.gov.br/${env.branchname}/sme-sigpae-api"
-              dockerImage1 = docker.build imagename1
+              dockerImage1 = docker.build(imagename1, "-f Dockerfile .")
               docker.withRegistry( 'https://registry.sme.prefeitura.sp.gov.br', registryCredential ) {
-              dockerImage1.push(imagetag)
+              dockerImage1.push()
               }
-              sh "docker rmi \$(docker images --format '{{.Repository}}:{{.Tag}}' | grep $imagename1)"
+              sh "docker rmi $imagename1"
             }
           }
         }
 	    
         stage('Deploy'){
-            when { anyOf {  branch 'master'; branch 'main'; branch "story/*"; branch 'development'; branch 'release';  } }        
+            when { anyOf {  branch 'master'; branch 'main'; branch "story/*"; branch 'development'; branch 'release'; branch 'homolog';  } }        
             steps {
                 script{
-                    if ( env.branchname == 'main' ||  env.branchname == 'master' || env.branchname == 'homolog' ) {
+                    if ( env.branchname == 'main' ||  env.branchname == 'master' || env.branchname == 'homolog' || env.branchname == 'release' ) {
                         sendTelegram("🤩 [Deploy] Job Name: ${JOB_NAME} \nBuild: ${BUILD_DISPLAY_NAME} \nStatus: Me aprove! \nLog: \n${env.BUILD_URL}")
                         timeout(time: 24, unit: "HOURS") {
                             input message: 'Deseja realizar o deploy?', ok: 'SIM', submitter: 'admin'
@@ -147,24 +145,14 @@ def sendTelegram(message) {
         return response
     }
 }
-def getTag(branchName) {
-    if("main".equals(branchName)) {
-        return "latest";
-    } else if ("master".equals(branchName)) {
-        return "latest";
-    } else if ("homolog".equals(branchName)) {
-        return "homolog";
-    } else if ("development".equals(branchName)) {
-        return "dev";
-    }
-    else{ return "" }
-}
 def getKubeconf(branchName) {
     if("main".equals(branchName)) {
         return "config_prd";
     } else if ("master".equals(branchName)) {
         return "config_prd";
     } else if ("homolog".equals(branchName)) {
+        return "config_dev";
+    } else if ("release".equals(branchName)) {
         return "config_dev";
     } else if ("development".equals(branchName)) {
         return "config_dev";
