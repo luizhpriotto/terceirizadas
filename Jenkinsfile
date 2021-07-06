@@ -28,7 +28,7 @@ pipeline {
 
         stage('AmbienteTestes') {
             agent {
-                label 'testado'
+                label 'master'
             }
             steps {
                 script {
