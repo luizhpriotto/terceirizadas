@@ -28,7 +28,7 @@ pipeline {
 
         stage('AmbienteTestes') {
             agent {
-                label 'master'
+                label 'testado'
             }
             steps {
                 script {
@@ -46,7 +46,7 @@ pipeline {
         }
         
         stage('Testes') {
-          when { branch 'homolog' }
+          when { branch 'testado' }
           steps {
              sh 'pip install --user pipenv'
              sh 'pipenv install --dev'
