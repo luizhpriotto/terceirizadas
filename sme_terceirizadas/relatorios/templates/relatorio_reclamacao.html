@@ -1,0 +1,83 @@
+{% extends 'cabecalho_relatorio_reclamacao.html' %}
+{% load index %}
+{% load static %}
+
+{% block conteudo %}
+
+<section class="corpo-relatorio-produto-reclamacao">
+  <p>Relatório de produtos em reclamação</p>
+  <div class="sessao-detalhes-reclamacao">
+    <div class="item-reclamacao">
+      <div class="item-prod um">Nome do produto</div>
+      <div class="item-prod dois">Marca</div>
+      <div class="item-prod dois">Fabricante</div>
+      <div class="item-prod tres">Qtde. reclamações</div>
+      <div class="item-prod quatro">Data cadastro</div>
+      <div class="item-prod dois">Status do produto</div>
+    </div>
+    {% for produto in produtos %}
+    <div class="item-reclamacao-detalhe">
+      <div class="item-prod-detalhe um">{{produto.nome}}</div>
+      <div class="item-prod-detalhe dois">{{produto.marca.nome}}</div>
+      <div class="item-prod-detalhe dois">{{produto.fabricante.nome}}</div>
+      <div class="item-prod-detalhe tres">{{produto.ultima_homologacao.reclamacoes.all|length}}</div>
+      <div class="item-prod-detalhe quatro">{{produto.criado_em|date:'d/m/Y'}}</div>
+      <div class="item-prod-detalhe dois">{{produto.ultima_homologacao.status.state.title }}</div>
+    </div>
+
+      {% for reclamacao in produto.ultima_homologacao.reclamacoes.all%}
+       <div class="visao-geral-produto">
+      <div class="duas-informacoes-separadas">
+        <div class="informacao">
+          <label>Reclamação #{{reclamacao.id_externo}} </label>
+        </div>
+        <div class="informacao-dois">
+        <p>Status Reclamação <label>{{reclamacao.status_titulo}}</label></p>
+        </div>
+      </div>
+       <div class="quatro-informacoes">
+        <div class="informacao">
+          <label>Reclamante</label>
+          {{reclamacao.reclamante_nome}}
+        </div>
+        <div class="informacao">
+          <label>RF</label>
+          {{reclamacao.reclamante_registro_funcional}}
+        </div>
+        <div class="informacao-tres">
+          <label>Nome escola</label>
+          {{reclamacao.escola.nome}}
+        </div>
+        <div class="informacao-quatro">
+          <label>Cód. EOL:</label>
+          {{reclamacao.escola.codigo_eol}}
+        </div>
+      </div>
+          <div class="duas-informacoes">
+        <div class="informacao">
+          <label>Data reclamação</label>
+          {{reclamacao.criado_em|date:'d/m/Y'}}
+        </div>
+        <div class="informacao-dois">
+          <label>Justificativa</label>
+          <p>{{reclamacao.justificativa|safe}}</p>
+        </div>
+        </div>
+      {% for log in reclamacao.logs.all %}
+            <div class="duas-informacoes">
+        <div class="informacao">
+          <label>{{log.status_evento_explicacao|obter_rotulo_data_log}}</label>
+          {{log.criado_em|date:'d/m/Y'}}
+        </div>
+        <div class="informacao-dois">
+          <label>{{log.status_evento_explicacao|obter_titulo_log_reclamacao}}</label>
+          {{log.justificativa|safe}}
+        </div>
+      </div>
+      {% endfor %}
+        </div>
+      {% endfor %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% include 'relatorio_base.html' %}
+{% load static %}
+{% load sass_tags %}
+
+
+<html>
+<head>
+  <link rel="stylesheet" href="{% sass_src 'css/cabecalho.scss' %}" type="text/css">
+  <link rel="stylesheet" href="{% sass_src 'css/override_relatorio.scss' %}" type="text/css">
+  <link rel="stylesheet" href="{% sass_src 'css/fluxo_status.scss' %}" type="text/css">
+  {% block css %}{% endblock %}
+</head>
+<body>
+{% block conteudo %}
+
+{% endblock %}
+</body>
+</html>
