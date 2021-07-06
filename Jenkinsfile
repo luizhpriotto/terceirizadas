@@ -6,9 +6,7 @@ pipeline {
     }
   
     agent {
-      node {
-        label 'python-36-rc'
-      }
+      node { label 'python-36-rc' }
     }
 
     options {
@@ -20,15 +18,12 @@ pipeline {
     stages {
 
         stage('CheckOut') {            
-            steps {
-              checkout scm
-            }            
+            steps { checkout scm }            
         }
 
         stage('AmbienteTestes') {
-            agent {
-                label 'master'
-            }
+            agent { label 'master' }
+            when { branch 'homolog' }
             steps {
                 script {
                     CONTAINER_ID = sh (script: 'docker ps -q --filter "name=terceirizadas-db"',returnStdout: true).trim()
@@ -43,22 +38,6 @@ pipeline {
                 }
             }
         }
-        
-        stage('Testes') {
-          when { branch 'testado' }
-          steps {
-             sh 'pip install --user pipenv'
-             sh 'pipenv install --dev'
-             sh 'pipenv run pytest'
-             sh 'pipenv run flake8'
-          }
-          post {
-            success{
-              //  Publicando arquivo de cobertura
-              publishCoverage adapters: [coberturaAdapter('coverage.xml')], sourceFileResolver: sourceFiles('NEVER_STORE')
-            }
-          }
-        }
 
         stage('AnaliseCodigo') {
 	      when { branch 'homolog' }
@@ -71,22 +50,41 @@ pipeline {
           }
         }
 
+        stage('Testes') {
+          when { branch 'homolog' }
+          steps {
+             sh 'pip install --user pipenv'
+             sh 'pipenv install --dev'
+             sh 'pipenv run pytest'
+             sh 'pipenv run flake8'
+          }
+          post {
+            success{
+              publishCoverage adapters: [coberturaAdapter('coverage.xml')], sourceFileResolver: sourceFiles('NEVER_STORE')
+            }
+          }
+        }
+
         stage('Build') {
           when { anyOf { branch 'master'; branch 'main'; branch "story/*"; branch 'development'; branch 'release'; branch 'homolog';  } } 
           steps {
             script {
               imagename1 = "registry.sme.prefeitura.sp.gov.br/${env.branchname}/sme-sigpae-api"
+              //imagename2 = "registry.sme.prefeitura.sp.gov.br/${env.branchname}/sme-outra"
               dockerImage1 = docker.build(imagename1, "-f Dockerfile .")
+              //dockerImage2 = docker.build(imagename2, "-f Dockerfile_outro .")
               docker.withRegistry( 'https://registry.sme.prefeitura.sp.gov.br', registryCredential ) {
               dockerImage1.push()
+              //dockerImage2.push()
               }
               sh "docker rmi $imagename1"
+              //sh "docker rmi $imagename2"
             }
           }
         }
 	    
         stage('Deploy'){
-            when { anyOf {  branch 'master'; branch 'main'; branch "story/*"; branch 'development'; branch 'release'; branch 'homolog';  } }        
+            when { anyOf {  branch 'master'; branch 'main'; branch 'development'; branch 'release'; branch 'homolog';  } }        
             steps {
                 script{
                     if ( env.branchname == 'main' ||  env.branchname == 'master' || env.branchname == 'homolog' || env.branchname == 'release' ) {
@@ -125,10 +123,8 @@ pipeline {
 }
 def sendTelegram(message) {
     def encodedMessage = URLEncoder.encode(message, "UTF-8")
-
     withCredentials([string(credentialsId: 'telegramToken', variable: 'TOKEN'),
     string(credentialsId: 'telegramChatId', variable: 'CHAT_ID')]) {
-
         response = httpRequest (consoleLogResponseBody: true,
                 contentType: 'APPLICATION_JSON',
                 httpMode: 'GET',
@@ -138,15 +134,9 @@ def sendTelegram(message) {
     }
 }
 def getKubeconf(branchName) {
-    if("main".equals(branchName)) {
-        return "config_prd";
-    } else if ("master".equals(branchName)) {
-        return "config_prd";
-    } else if ("homolog".equals(branchName)) {
-        return "config_dev";
-    } else if ("release".equals(branchName)) {
-        return "config_dev";
-    } else if ("development".equals(branchName)) {
-        return "config_dev";
-    }
+    if("main".equals(branchName)) { return "config_prd"; }
+    else if ("master".equals(branchName)) { return "config_prd"; }
+    else if ("homolog".equals(branchName)) { return "config_dev"; }
+    else if ("release".equals(branchName)) { return "config_dev"; }
+    else if ("development".equals(branchName)) { return "config_dev"; }
 }
