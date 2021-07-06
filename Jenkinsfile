@@ -98,14 +98,18 @@ pipeline {
                         }
                         withCredentials([file(credentialsId: "${kubeconfig}", variable: 'config')]){
                             sh('cp $config '+"$home"+'/.kube/config')
-                            sh( 'kubectl get nodes')
+                            sh 'kubectl rollout restart deployment/sigpae-backend -n sme-sigpae'
+                            sh 'kubectl rollout restart deployment/sigpae-beat -n sme-sigpae'
+                            sh 'kubectl rollout restart deployment/sigpae-celery -n sme-sigpae'
                             sh('rm -f '+"$home"+'/.kube/config')
                         }
                     }
                     else{
                         withCredentials([file(credentialsId: "${kubeconfig}", variable: 'config')]){
                             sh('cp $config '+"$home"+'/.kube/config')
-                            sh( 'kubectl get nodes')
+                            sh 'kubectl rollout restart deployment/sigpae-backend -n sme-sigpae'
+                            sh 'kubectl rollout restart deployment/sigpae-beat -n sme-sigpae'
+                            sh 'kubectl rollout restart deployment/sigpae-celery -n sme-sigpae'
                             sh('rm -f '+"$home"+'/.kube/config')
                         }
                     }
@@ -161,7 +165,7 @@ def getKubeconf(branchName) {
     } else if ("master".equals(branchName)) {
         return "config_prd";
     } else if ("homolog".equals(branchName)) {
-        return "config_dev";
+        return "config_hom";
     } else if ("development".equals(branchName)) {
         return "config_dev";
     }
