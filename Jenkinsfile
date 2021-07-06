@@ -46,7 +46,7 @@ pipeline {
         }
         
         stage('Testes') {
-          when { branch 'testado' }
+          when { branch 'homolog' }
           steps {
              sh 'pip install --user pipenv'
              sh 'pipenv install --dev'
@@ -67,13 +67,14 @@ pipeline {
               withSonarQubeEnv('sonarqube-local'){
                 sh 'echo "[ INFO ] Iniciando analise Sonar..." && sonar-scanner \
                 -Dsonar.projectKey=SME-Terceirizadas \
-                -Dsonar.sources=.'
+                -Dsonar.sources=. \
+                -Dsonar.host.url=http://sonar.sme.prefeitura.sp.gov.br'
             }
           }
         }
 
         stage('Build') {
-          when { anyOf { branch 'master'; branch 'main'; branch "story/*"; branch 'development'; branch 'release';  } } 
+          when { anyOf { branch 'master'; branch 'main'; branch "story/*"; branch 'development'; branch 'release'; branch 'homolog';  } } 
           steps {
             script {
               imagename1 = "registry.sme.prefeitura.sp.gov.br/${env.branchname}/sme-sigpae-api"
@@ -87,10 +88,10 @@ pipeline {
         }
 	    
         stage('Deploy'){
-            when { anyOf {  branch 'master'; branch 'main'; branch "story/*"; branch 'development'; branch 'release';  } }        
+            when { anyOf {  branch 'master'; branch 'main'; branch "story/*"; branch 'development'; branch 'release'; branch 'homolog';  } }        
             steps {
                 script{
-                    if ( env.branchname == 'main' ||  env.branchname == 'master' || env.branchname == 'homolog' ) {
+                    if ( env.branchname == 'main' ||  env.branchname == 'master' || env.branchname == 'homolog' || env.branchname == 'release' ) {
                         sendTelegram("🤩 [Deploy] Job Name: ${JOB_NAME} \nBuild: ${BUILD_DISPLAY_NAME} \nStatus: Me aprove! \nLog: \n${env.BUILD_URL}")
                         timeout(time: 24, unit: "HOURS") {
                             input message: 'Deseja realizar o deploy?', ok: 'SIM', submitter: 'admin'
@@ -153,6 +154,8 @@ def getTag(branchName) {
         return "latest";
     } else if ("homolog".equals(branchName)) {
         return "homolog";
+    } else if ("release".equals(branchName)) {
+        return "homolog";
     } else if ("development".equals(branchName)) {
         return "dev";
     }
@@ -164,6 +167,8 @@ def getKubeconf(branchName) {
     } else if ("master".equals(branchName)) {
         return "config_prd";
     } else if ("homolog".equals(branchName)) {
+        return "config_dev";
+    } else if ("release".equals(branchName)) {
         return "config_dev";
     } else if ("development".equals(branchName)) {
         return "config_dev";
