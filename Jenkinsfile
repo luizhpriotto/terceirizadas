@@ -46,7 +46,7 @@ pipeline {
         }
         
         stage('Testes') {
-          when { branch 'homolog' }
+          when { branch 'testado' }
           steps {
              sh 'pip install --user pipenv'
              sh 'pipenv install --dev'
@@ -67,8 +67,7 @@ pipeline {
               withSonarQubeEnv('sonarqube-local'){
                 sh 'echo "[ INFO ] Iniciando analise Sonar..." && sonar-scanner \
                 -Dsonar.projectKey=SME-Terceirizadas \
-                -Dsonar.sources=. \
-                -Dsonar.host.url=http://sonar.sme.prefeitura.sp.gov.br'
+                -Dsonar.sources=.'
             }
           }
         }
